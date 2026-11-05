@@ -46,3 +46,14 @@ Projekt zawiera testy jednostkowe xUnit w projekcie `notatnik.Tests`:
 ```bash
 dotnet test
 ```
+Dodatkowa wskazówka dotycząca promptowania
+Producent modelu: Google
+Model: Gemini 3 Flash
+Źródło: Oficjalne strategie projektowania promptów Google
+Data odczytania: 05.11.2026
+Wskazówka: Stosowanie przykładów few-shot – warto umieszczać w poleceniu kilka przykładów prawidłowych danych wejściowych i oczekiwanych odpowiedzi, aby model lepiej rozumiał wymagany format i sposób wykonania zadania.
+
+Wpływ na projekt: Dzięki tej wskazówce uporządkowałem sposób opisywania wymagań dla notatnika, aby model generował bardziej spójny kod i poprawnie uwzględniał wymagania dotyczące zapisywania notatek.
+
+https://aistudio.google.com/docs/prompting-strategies
+https://aistudio.google.com/docs/prompting-strategies
