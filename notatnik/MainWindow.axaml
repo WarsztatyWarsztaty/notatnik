@@ -2,8 +2,151 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:local="clr-namespace:notatnik"
+        mc:Ignorable="d" d:DesignWidth="950" d:DesignHeight="620"
+        Width="950" Height="620"
+        MinWidth="720" MinHeight="480"
         x:Class="notatnik.MainWindow"
-        Title="notatnik">
-    Welcome to Avalonia!
+        Title="Notatnik"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid RowDefinitions="*,Auto">
+        <!-- Główny obszar roboczy podzielony na listę notatek i edytor -->
+        <Grid Grid.Row="0" ColumnDefinitions="320,*">
+            
+            <!-- Lewa kolumna: Lista notatek -->
+            <Border Grid.Column="0" 
+                    BorderBrush="#33808080" 
+                    BorderThickness="0,0,1,0" 
+                    Padding="14">
+                <Grid RowDefinitions="Auto,Auto,*,Auto">
+                    <!-- Nagłówek -->
+                    <TextBlock Grid.Row="0" 
+                               Text="📝 Zapisane notatki" 
+                               FontSize="18" 
+                               FontWeight="Bold" 
+                               Margin="0,0,0,12"/>
+
+                    <!-- Przycisk Nowa notatka -->
+                    <Button Grid.Row="1" 
+                            x:Name="NewNoteButton" 
+                            Click="OnNewNoteClicked"
+                            HorizontalAlignment="Stretch" 
+                            HorizontalContentAlignment="Center"
+                            Padding="10,8"
+                            Margin="0,0,0,12"
+                            Content="➕ Nowa notatka"
+                            FontWeight="SemiBold"/>
+
+                    <!-- Lista zapisanych notatek -->
+                    <ListBox Grid.Row="2" 
+                             x:Name="NotesListBox" 
+                             SelectionChanged="OnNoteSelectionChanged"
+                             CornerRadius="6">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="local:Note">
+                                <StackPanel Spacing="3" Margin="4">
+                                    <TextBlock Text="{Binding DisplayTitle}" 
+                                               FontWeight="SemiBold" 
+                                               FontSize="14" 
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding UpdatedAtFormatted}" 
+                                               FontSize="11" 
+                                               Foreground="#888888"/>
+                                    <TextBlock Text="{Binding Preview}" 
+                                               FontSize="12" 
+                                               Foreground="#777777" 
+                                               TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Przycisk Usuń notatkę -->
+                    <Button Grid.Row="3" 
+                            x:Name="DeleteNoteButton" 
+                            Click="OnDeleteNoteClicked"
+                            HorizontalAlignment="Stretch" 
+                            HorizontalContentAlignment="Center"
+                            Margin="0,12,0,0"
+                            Padding="8"
+                            Content="🗑️ Usuń wybraną notatkę"/>
+                </Grid>
+            </Border>
+
+            <!-- Prawa kolumna: Pole na tytuł, treść i przycisk zapisu -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="18">
+                <!-- Pole na tytuł -->
+                <TextBlock Grid.Row="0" 
+                           Text="Tytuł notatki:" 
+                           FontWeight="SemiBold" 
+                           FontSize="14"
+                           Margin="0,0,0,6"/>
+                
+                <TextBox Grid.Row="1" 
+                         x:Name="TitleTextBox" 
+                         PlaceholderText="Wpisz tytuł notatki..." 
+                         FontSize="15" 
+                         Margin="0,0,0,14"/>
+
+                <!-- Pole na treść -->
+                <TextBlock Grid.Row="2" 
+                           Text="Treść notatki:" 
+                           FontWeight="SemiBold" 
+                           FontSize="14"
+                           Margin="0,0,0,6"/>
+                
+                <TextBox Grid.Row="3" 
+                         x:Name="ContentTextBox" 
+                         PlaceholderText="Wpisz treść notatki..." 
+                         AcceptsReturn="True" 
+                         TextWrapping="Wrap" 
+                         VerticalAlignment="Stretch" 
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         FontSize="14"
+                         Margin="0,0,0,14"/>
+
+                <!-- Przyciski akcji (Zapis, Eksport, Status) -->
+                <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button x:Name="SaveButton" 
+                            Click="OnSaveNoteClicked"
+                            Content="💾 Zapisz notatkę" 
+                            FontWeight="Bold"
+                            Padding="16,9"/>
+
+                    <Button x:Name="ExportButton" 
+                            Click="OnExportTxtClicked"
+                            Content="📄 Eksportuj jako .txt" 
+                            Padding="12,9"/>
+
+                    <TextBlock x:Name="StatusMessageTextBlock" 
+                               VerticalAlignment="Center" 
+                               Foreground="#2E7D32" 
+                               FontWeight="Medium"
+                               Margin="10,0,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- Dolny pasek informacyjny o pliku zapisu -->
+        <Border Grid.Row="1" 
+                BorderThickness="0,1,0,0" 
+                BorderBrush="#33808080" 
+                Padding="14,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" 
+                           x:Name="FilePathTextBlock" 
+                           VerticalAlignment="Center" 
+                           FontSize="11" 
+                           Foreground="#888888" 
+                           TextTrimming="CharacterEllipsis"/>
+                
+                <Button Grid.Column="1" 
+                        Click="OnOpenFolderClicked"
+                        Content="📂 Otwórz folder z plikiem" 
+                        FontSize="11" 
+                        Padding="8,4"/>
+            </Grid>
+        </Border>
+    </Grid>
 </Window>

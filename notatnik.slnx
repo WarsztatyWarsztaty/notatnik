@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="notatnik.Tests/notatnik.Tests.csproj" />
+  <Project Path="notatnik/notatnik.csproj" />
+</Solution>

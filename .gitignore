@@ -1,0 +1,10 @@
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+.vscode/
+.idea/
+notatki.json
+eksport_txt/
+
