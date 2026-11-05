@@ -110,8 +110,18 @@ public partial class MainWindow : Window
                     existing.Title = title;
                     existing.Content = content;
                     existing.UpdatedAt = DateTime.Now;
+                    string path = _repository.FilePath;
+string content = TitleTextBox.Text + Environment.NewLine + ContentTextBox.Text;
 
-                    _repository.SaveAll(_notes);
+                   try
+{
+    File.WriteAllText(path, content);
+    StatusText.Text = "Zapisano";
+}
+catch (Exception ex)
+{
+    StatusText.Text = $"Nie udało się zapisać: {ex.Message}";
+}
                     SetStatus($"Zaktualizowano notatkę: '{existing.Title}'.");
                 }
                 else
@@ -125,7 +135,15 @@ public partial class MainWindow : Window
                         UpdatedAt = DateTime.Now
                     };
                     _notes.Add(newNote);
-                    _repository.SaveAll(_notes);
+                   try
+{
+    File.WriteAllText(path, content);
+    StatusText.Text = "Zapisano";
+}
+catch (Exception ex)
+{
+    StatusText.Text = $"Nie udało się zapisać: {ex.Message}";
+}
                     SetStatus($"Zapisano notatkę: '{newNote.Title}'.");
                 }
             }
@@ -141,7 +159,15 @@ public partial class MainWindow : Window
                     UpdatedAt = DateTime.Now
                 };
                 _notes.Add(newNote);
-                _repository.SaveAll(_notes);
+                try
+{
+    File.WriteAllText(path, content);
+    StatusText.Text = "Zapisano";
+}
+catch (Exception ex)
+{
+    StatusText.Text = $"Nie udało się zapisać: {ex.Message}";
+}
                 SetStatus($"Utworzono nową notatkę: '{newNote.Title}'.");
             }
 
