@@ -117,6 +117,7 @@ public partial class MainWindow : Window
             currentNote.Title = title;
             currentNote.Content = content;
             currentNote.UpdatedAt = DateTime.Now;
+            currentNote.HasTime = true;
 
             // Przesuń zaktualizowaną notatkę na górę listy (najnowsza na górze)
             int oldIndex = _notes.IndexOf(currentNote);
@@ -135,7 +136,9 @@ public partial class MainWindow : Window
             {
                 Title = title,
                 Content = content,
-                UpdatedAt = DateTime.Now
+                UpdatedAt = DateTime.Now,
+                HasTime = true,
+                Separator = "—"
             };
 
             _notes.Insert(0, newNote);

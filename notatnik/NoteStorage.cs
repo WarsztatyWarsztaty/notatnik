@@ -14,11 +14,11 @@ public static class NoteStorage
     public const string DefaultFileName = "notatki.md";
 
     private static readonly Regex NoteHeaderRegex = new(
-        @"^##\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\s*[—–-]\s*(.*)$",
+        @"^##\s*(\d{4}-\d{2}-\d{2}(?:\s+\d{2}:\d{2})?)\s*([—–-])\s*(.*)$",
         RegexOptions.Compiled);
 
     private static readonly Regex SecondaryHeaderRegex = new(
-        @"^##\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\s*(.*)$",
+        @"^##\s*(\d{4}-\d{2}-\d{2}(?:\s+\d{2}:\d{2})?)\s*(.*)$",
         RegexOptions.Compiled);
 
     private static readonly Regex FallbackHeaderRegex = new(
@@ -121,9 +121,13 @@ public static class NoteStorage
                 sb.AppendLine(); // Pusta linia między wpisami
             }
 
-            string dateStr = note.UpdatedAt.ToString("yyyy-MM-dd HH:mm");
+            string dateStr = note.HasTime
+                ? note.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
+                : note.UpdatedAt.ToString("yyyy-MM-dd");
+
+            string sep = string.IsNullOrWhiteSpace(note.Separator) ? "—" : note.Separator.Trim();
             string title = string.IsNullOrWhiteSpace(note.Title) ? "Bez tytułu" : note.Title.Trim();
-            sb.AppendLine($"## {dateStr} — {title}");
+            sb.AppendLine($"## {dateStr} {sep} {title}");
 
             if (!string.IsNullOrEmpty(note.Content))
             {
@@ -140,7 +144,14 @@ public static class NoteStorage
         if (string.IsNullOrWhiteSpace(markdown))
             return notes;
 
-        using var reader = new StringReader(markdown);
+        // Jeśli nagłówki ## są sklejone z poprzednim tekstem (np. "po tobie.## 2026-04-12"),
+        // wstaw przed nimi znak nowej linii.
+        string normalizedMarkdown = Regex.Replace(
+            markdown,
+            @"(?<![\r\n])(##\s*)",
+            "\n$1");
+
+        using var reader = new StringReader(normalizedMarkdown);
         Note? currentNote = null;
         var contentBuilder = new StringBuilder();
 
@@ -151,7 +162,7 @@ public static class NoteStorage
             if (match.Success)
             {
                 FinalizeCurrentNote(currentNote, contentBuilder, notes);
-                currentNote = CreateNoteFromMatch(match.Groups[1].Value, match.Groups[2].Value);
+                currentNote = CreateNoteFromMatch(match.Groups[1].Value, match.Groups[2].Value, match.Groups[3].Value);
                 continue;
             }
 
@@ -159,7 +170,7 @@ public static class NoteStorage
             if (secondaryMatch.Success)
             {
                 FinalizeCurrentNote(currentNote, contentBuilder, notes);
-                currentNote = CreateNoteFromMatch(secondaryMatch.Groups[1].Value, secondaryMatch.Groups[2].Value);
+                currentNote = CreateNoteFromMatch(secondaryMatch.Groups[1].Value, "—", secondaryMatch.Groups[2].Value);
                 continue;
             }
 
@@ -170,7 +181,9 @@ public static class NoteStorage
                 currentNote = new Note
                 {
                     Title = string.IsNullOrWhiteSpace(fallbackMatch.Groups[1].Value) ? "Bez tytułu" : fallbackMatch.Groups[1].Value.Trim(),
-                    UpdatedAt = DateTime.Now
+                    UpdatedAt = DateTime.Now,
+                    HasTime = true,
+                    Separator = "—"
                 };
                 continue;
             }
@@ -199,22 +212,45 @@ public static class NoteStorage
         contentBuilder.Clear();
     }
 
-    private static Note CreateNoteFromMatch(string dateStr, string title)
+    private static Note CreateNoteFromMatch(string dateStr, string separator, string title)
     {
-        DateTime updatedAt = DateTime.Now;
-        if (DateTime.TryParseExact(dateStr.Trim(), "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
+        dateStr = dateStr.Trim();
+        DateTime updatedAt;
+        bool hasTime = false;
+
+        if (DateTime.TryParseExact(dateStr, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dtWithTime))
         {
-            updatedAt = parsedDate;
+            updatedAt = dtWithTime;
+            hasTime = true;
         }
-        else if (DateTime.TryParse(dateStr.Trim(), CultureInfo.InvariantCulture, out var fallbackDate))
+        else if (DateTime.TryParseExact(dateStr, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dtDateOnly))
         {
-            updatedAt = fallbackDate;
+            updatedAt = dtDateOnly;
+            hasTime = false;
+        }
+        else if (DateTime.TryParse(dateStr, CultureInfo.InvariantCulture, out var dtFallback))
+        {
+            updatedAt = dtFallback;
+            hasTime = dateStr.Contains(':');
+        }
+        else
+        {
+            updatedAt = DateTime.Now;
+            hasTime = true;
+        }
+
+        string sep = separator.Trim();
+        if (string.IsNullOrEmpty(sep))
+        {
+            sep = "—";
         }
 
         return new Note
         {
             Title = string.IsNullOrWhiteSpace(title) ? "Bez tytułu" : title.Trim(),
-            UpdatedAt = updatedAt
+            UpdatedAt = updatedAt,
+            HasTime = hasTime,
+            Separator = sep
         };
     }
 

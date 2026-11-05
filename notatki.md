@@ -1,6 +1,14 @@
-## 2026-09-08 14:32 — Zakupy
-mleko
-chleb
+## 2026-10-25 - Przypomnienie
+Czwartek lekarz 18:30
 
-## 2026-09-07 09:15 — Pomysł na projekt
-minutnik z historią sesji
+## 2026-09-05 - Inwokacja Pan Tadeusz
+Litwo, Ojczyzno moja! ty jesteś jak zdrowie;
+Ile cię trzeba cenić, ten tylko się dowie,
+Kto cię stracił. Dziś piękność twą w całej ozdobie
+Widzę i opisuję, bo tęsknię po tobie.
+
+## 2026-04-12 - Lista na zakupy
+- Mleko
+- Chleb
+- Masło
+- Cherbata

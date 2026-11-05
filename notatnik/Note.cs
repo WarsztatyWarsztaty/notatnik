@@ -11,6 +11,8 @@ public class Note : INotifyPropertyChanged
     private string _title = string.Empty;
     private string _content = string.Empty;
     private DateTime _updatedAt = DateTime.Now;
+    private bool _hasTime = true;
+    private string _separator = "—";
 
     public string Id
     {
@@ -67,11 +69,40 @@ public class Note : INotifyPropertyChanged
         }
     }
 
+    public bool HasTime
+    {
+        get => _hasTime;
+        set
+        {
+            if (_hasTime != value)
+            {
+                _hasTime = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(UpdatedAtFormatted));
+            }
+        }
+    }
+
+    public string Separator
+    {
+        get => _separator;
+        set
+        {
+            if (_separator != value)
+            {
+                _separator = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     [JsonIgnore]
     public string DisplayTitle => string.IsNullOrWhiteSpace(Title) ? "(Bez tytułu)" : Title;
 
     [JsonIgnore]
-    public string UpdatedAtFormatted => UpdatedAt.ToString("yyyy-MM-dd HH:mm");
+    public string UpdatedAtFormatted => HasTime
+        ? UpdatedAt.ToString("yyyy-MM-dd HH:mm")
+        : UpdatedAt.ToString("yyyy-MM-dd");
 
     [JsonIgnore]
     public string Preview
@@ -92,4 +123,3 @@ public class Note : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
-

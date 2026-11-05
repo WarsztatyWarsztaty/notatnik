@@ -102,6 +102,47 @@ minutnik z historią sesji
     }
 
     [Fact]
+    public void ParseMarkdown_HandlesGluedHeadersAndHyphenSeparatorAndSortsCorrectly()
+    {
+        string rawInput =
+@"## 2026-09-05 - Inwokacja Pan Tadeusz
+Litwo, Ojczyzno moja! ty jesteś jak zdrowie;
+Ile cię trzeba cenić, ten tylko się dowie,
+Kto cię stracił. Dziś piękność twą w całej ozdobie
+Widzę i opisuję, bo tęsknię po tobie.## 2026-04-12 - Lista na zakupy
+- Mleko
+- Chleb
+- Masło
+- Cherbata## 2026-10-25 - Przypomnienie
+Czwartek lekarz 18:30";
+
+        var notes = NoteStorage.ParseMarkdown(rawInput);
+        Assert.Equal(3, notes.Count);
+
+        // Sprawdź czy zserializowany wynik ma najnowszą notatkę na górze (2026-10-25) oraz pustą linię między wpisami
+        string serialized = NoteStorage.SerializeMarkdown(notes);
+
+        string expected =
+@"## 2026-10-25 - Przypomnienie
+Czwartek lekarz 18:30
+
+## 2026-09-05 - Inwokacja Pan Tadeusz
+Litwo, Ojczyzno moja! ty jesteś jak zdrowie;
+Ile cię trzeba cenić, ten tylko się dowie,
+Kto cię stracił. Dziś piękność twą w całej ozdobie
+Widzę i opisuję, bo tęsknię po tobie.
+
+## 2026-04-12 - Lista na zakupy
+- Mleko
+- Chleb
+- Masło
+- Cherbata
+";
+
+        Assert.Equal(expected.Replace("\r\n", "\n"), serialized.Replace("\r\n", "\n"));
+    }
+
+    [Fact]
     public void ParseMarkdown_ParsesSpecFormatAndMultilineContent()
     {
         string inputMarkdown =
