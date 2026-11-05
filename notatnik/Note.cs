@@ -1,20 +1,25 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 
 namespace notatnik;
 
 public class Note : INotifyPropertyChanged
 {
-    private string _id = Guid.NewGuid().ToString();
+    private Guid _id;
     private string _title = string.Empty;
     private string _content = string.Empty;
-    private DateTime _updatedAt = DateTime.Now;
-    private bool _hasTime = true;
-    private string _separator = "—";
+    private DateTime _createdAt;
+    private DateTime _updatedAt;
 
-    public string Id
+    public Note()
+    {
+        _id = Guid.NewGuid();
+        _createdAt = DateTime.Now;
+        _updatedAt = DateTime.Now;
+    }
+
+    public Guid Id
     {
         get => _id;
         set
@@ -50,7 +55,20 @@ public class Note : INotifyPropertyChanged
             {
                 _content = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(Preview));
+            }
+        }
+    }
+
+    public DateTime CreatedAt
+    {
+        get => _createdAt;
+        set
+        {
+            if (_createdAt != value)
+            {
+                _createdAt = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(FormattedDate));
             }
         }
     }
@@ -64,57 +82,14 @@ public class Note : INotifyPropertyChanged
             {
                 _updatedAt = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(UpdatedAtFormatted));
+                OnPropertyChanged(nameof(FormattedDate));
             }
         }
     }
 
-    public bool HasTime
-    {
-        get => _hasTime;
-        set
-        {
-            if (_hasTime != value)
-            {
-                _hasTime = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(UpdatedAtFormatted));
-            }
-        }
-    }
-
-    public string Separator
-    {
-        get => _separator;
-        set
-        {
-            if (_separator != value)
-            {
-                _separator = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    [JsonIgnore]
     public string DisplayTitle => string.IsNullOrWhiteSpace(Title) ? "(Bez tytułu)" : Title;
 
-    [JsonIgnore]
-    public string UpdatedAtFormatted => HasTime
-        ? UpdatedAt.ToString("yyyy-MM-dd HH:mm")
-        : UpdatedAt.ToString("yyyy-MM-dd");
-
-    [JsonIgnore]
-    public string Preview
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(Content)) return "(brak treści)";
-            string[] lines = Content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            string firstLine = lines.Length > 0 ? lines[0].Trim() : "";
-            return firstLine.Length > 40 ? firstLine.Substring(0, 40) + "..." : firstLine;
-        }
-    }
+    public string FormattedDate => $"Zmodyfikowano: {UpdatedAt:yyyy-MM-dd HH:mm} | Utworzono: {CreatedAt:yyyy-MM-dd HH:mm}";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

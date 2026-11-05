@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using notatnik;
 using Xunit;
@@ -10,205 +11,55 @@ namespace notatnik.Tests;
 public class NoteTests
 {
     [Fact]
-    public void DisplayTitle_WhenTitleIsEmpty_ReturnsFallback()
+    public void Note_Initialization_HasValidDefaults()
     {
-        var note = new Note { Title = "" };
-        Assert.Equal("(Bez tytułu)", note.DisplayTitle);
+        var note = new Note();
 
-        note.Title = "   ";
+        Assert.NotEqual(Guid.Empty, note.Id);
+        Assert.Equal(string.Empty, note.Title);
+        Assert.Equal(string.Empty, note.Content);
+        Assert.True(note.CreatedAt <= DateTime.Now);
+        Assert.True(note.UpdatedAt <= DateTime.Now);
         Assert.Equal("(Bez tytułu)", note.DisplayTitle);
     }
 
     [Fact]
-    public void DisplayTitle_WhenTitleProvided_ReturnsTitle()
+    public void Note_DisplayTitle_WhenTitleProvided_ReturnsTitle()
     {
-        var note = new Note { Title = "Lista zakupów" };
-        Assert.Equal("Lista zakupów", note.DisplayTitle);
+        var note = new Note { Title = "Moja notatka" };
+        Assert.Equal("Moja notatka", note.DisplayTitle);
     }
 
     [Fact]
-    public void Preview_TruncatesLongContent()
+    public void Note_FormattedDate_ContainsDates()
     {
         var note = new Note
         {
-            Content = "To jest bardzo długa pierwsza linia notatki, która powinna zostać skrócona wielokropkiem po określonej liczbie znaków"
+            CreatedAt = new DateTime(2026, 11, 5, 10, 0, 0),
+            UpdatedAt = new DateTime(2026, 11, 5, 12, 30, 0)
         };
 
-        Assert.EndsWith("...", note.Preview);
+        Assert.Contains("2026-11-05 10:00", note.FormattedDate);
+        Assert.Contains("2026-11-05 12:30", note.FormattedDate);
     }
 
     [Fact]
-    public void SerializeMarkdown_ExactUserExampleFormat()
+    public void Repository_EnsureStorageExists_CreatesEmptyJsonFileIfNotExist()
     {
-        var note1 = new Note
-        {
-            Title = "Zakupy",
-            Content = "mleko\nchleb",
-            UpdatedAt = new DateTime(2026, 9, 8, 14, 32, 0)
-        };
-        var note2 = new Note
-        {
-            Title = "Pomysł na projekt",
-            Content = "minutnik z historią sesji",
-            UpdatedAt = new DateTime(2026, 9, 7, 9, 15, 0)
-        };
-
-        // Przekazujemy w odwrotnej kolejności, żeby sprawdzić czy sortuje najnowszą na górę
-        var markdown = NoteStorage.SerializeMarkdown(new[] { note2, note1 });
-
-        string expected =
-@"## 2026-09-08 14:32 — Zakupy
-mleko
-chleb
-
-## 2026-09-07 09:15 — Pomysł na projekt
-minutnik z historią sesji
-";
-
-        Assert.Equal(expected.Replace("\r\n", "\n"), markdown.Replace("\r\n", "\n"));
-    }
-
-    [Fact]
-    public void SerializeMarkdown_FormatsAccordingToSpec_WithNewestOnTop()
-    {
-        var olderNote = new Note
-        {
-            Title = "Pierwsza notatka",
-            Content = "Treść pierwszej notatki\nw dwóch wierszach",
-            UpdatedAt = new DateTime(2026, 9, 8, 14, 32, 0)
-        };
-
-        var newerNote = new Note
-        {
-            Title = "Druga notatka",
-            Content = "Treść drugiej nowszej notatki",
-            UpdatedAt = new DateTime(2026, 9, 8, 16, 45, 0)
-        };
-
-        // Przekazujemy w kolejności chronologicznej
-        var markdown = NoteStorage.SerializeMarkdown(new[] { olderNote, newerNote });
-
-        // Sprawdź format:
-        // ## 2026-09-08 14:32 — Tytuł notatki
-        // Najnowsza notatka na górze pliku
-        var lines = markdown.Replace("\r\n", "\n").Split('\n');
-
-        Assert.Equal("## 2026-09-08 16:45 — Druga notatka", lines[0]);
-        Assert.Equal("Treść drugiej nowszej notatki", lines[1]);
-        Assert.Equal("", lines[2]); // Pusta linia między wpisami
-        Assert.Equal("## 2026-09-08 14:32 — Pierwsza notatka", lines[3]);
-        Assert.Equal("Treść pierwszej notatki", lines[4]);
-        Assert.Equal("w dwóch wierszach", lines[5]);
-    }
-
-    [Fact]
-    public void ParseMarkdown_HandlesGluedHeadersAndHyphenSeparatorAndSortsCorrectly()
-    {
-        string rawInput =
-@"## 2026-09-05 - Inwokacja Pan Tadeusz
-Litwo, Ojczyzno moja! ty jesteś jak zdrowie;
-Ile cię trzeba cenić, ten tylko się dowie,
-Kto cię stracił. Dziś piękność twą w całej ozdobie
-Widzę i opisuję, bo tęsknię po tobie.## 2026-04-12 - Lista na zakupy
-- Mleko
-- Chleb
-- Masło
-- Cherbata## 2026-10-25 - Przypomnienie
-Czwartek lekarz 18:30";
-
-        var notes = NoteStorage.ParseMarkdown(rawInput);
-        Assert.Equal(3, notes.Count);
-
-        // Sprawdź czy zserializowany wynik ma najnowszą notatkę na górze (2026-10-25) oraz pustą linię między wpisami
-        string serialized = NoteStorage.SerializeMarkdown(notes);
-
-        string expected =
-@"## 2026-10-25 - Przypomnienie
-Czwartek lekarz 18:30
-
-## 2026-09-05 - Inwokacja Pan Tadeusz
-Litwo, Ojczyzno moja! ty jesteś jak zdrowie;
-Ile cię trzeba cenić, ten tylko się dowie,
-Kto cię stracił. Dziś piękność twą w całej ozdobie
-Widzę i opisuję, bo tęsknię po tobie.
-
-## 2026-04-12 - Lista na zakupy
-- Mleko
-- Chleb
-- Masło
-- Cherbata
-";
-
-        Assert.Equal(expected.Replace("\r\n", "\n"), serialized.Replace("\r\n", "\n"));
-    }
-
-    [Fact]
-    public void ParseMarkdown_ParsesSpecFormatAndMultilineContent()
-    {
-        string inputMarkdown =
-@"## 2026-09-08 16:45 — Druga notatka
-Treść drugiej nowszej notatki
-
-## 2026-09-08 14:32 — Tytuł notatki
-treść notatki, może mieć kilka linii
-druga linia treści
-trzecia linia treści
-";
-
-        var notes = NoteStorage.ParseMarkdown(inputMarkdown);
-
-        Assert.Equal(2, notes.Count);
-
-        Assert.Equal("Druga notatka", notes[0].Title);
-        Assert.Equal(new DateTime(2026, 9, 8, 16, 45, 0), notes[0].UpdatedAt);
-        Assert.Equal("Treść drugiej nowszej notatki", notes[0].Content);
-
-        Assert.Equal("Tytuł notatki", notes[1].Title);
-        Assert.Equal(new DateTime(2026, 9, 8, 14, 32, 0), notes[1].UpdatedAt);
-        Assert.Equal("treść notatki, może mieć kilka linii\ndruga linia treści\ntrzecia linia treści", notes[1].Content.Replace("\r\n", "\n"));
-    }
-
-    [Fact]
-    public void SaveAndLoadNotes_PreservesPolishCharactersAndFormatting()
-    {
-        string tempFile = Path.Combine(Path.GetTempPath(), $"notatki_test_{Guid.NewGuid()}.md");
+        string tempFile = Path.Combine(Path.GetTempPath(), $"notes_test_{Guid.NewGuid()}.json");
 
         try
         {
-            var notes = new List<Note>
-            {
-                new Note
-                {
-                    Title = "Notatka z polskimi znakami: ąćęłńóśźż ĄĆĘŁŃÓŚŹŻ",
-                    Content = "Zażółć gęślą jaźń!\nZażółconą gęślą jaźń w drugiej linii.",
-                    UpdatedAt = new DateTime(2026, 11, 5, 8, 30, 0)
-                },
-                new Note
-                {
-                    Title = "Zwykły tytuł",
-                    Content = "Prosta treść bez udziwnień",
-                    UpdatedAt = new DateTime(2026, 11, 5, 8, 0, 0)
-                }
-            };
+            var repo = new JsonNoteRepository(tempFile);
+            Assert.False(File.Exists(tempFile));
 
-            // Zapis do pliku
-            NoteStorage.SaveNotes(tempFile, notes);
+            var notes = repo.GetAllNotes();
+
             Assert.True(File.Exists(tempFile));
+            Assert.Empty(notes);
 
-            // Upewnij się, że w pliku są surowe polskie znaki (bez encji typu \u0105 czy &oacute;)
-            string rawFileText = File.ReadAllText(tempFile, Encoding.UTF8);
-            Assert.Contains("ąćęłńóśźż ĄĆĘŁŃÓŚŹŻ", rawFileText);
-            Assert.Contains("Zażółć gęślą jaźń!", rawFileText);
-            Assert.DoesNotContain("\\u0", rawFileText);
-
-            // Odczyt z pliku
-            var loaded = NoteStorage.LoadNotes(tempFile);
-
-            Assert.Equal(2, loaded.Count);
-            Assert.Equal("Notatka z polskimi znakami: ąćęłńóśźż ĄĆĘŁŃÓŚŹŻ", loaded[0].Title);
-            Assert.Contains("Zażółć gęślą jaźń!", loaded[0].Content);
-            Assert.Equal("Zwykły tytuł", loaded[1].Title);
-            Assert.Equal("Prosta treść bez udziwnień", loaded[1].Content);
+            string content = File.ReadAllText(tempFile).Trim();
+            Assert.Equal("[]", content);
         }
         finally
         {
@@ -220,11 +71,178 @@ trzecia linia treści
     }
 
     [Fact]
-    public void LoadNotes_WhenFileDoesNotExist_ReturnsEmptyList()
+    public void Repository_SaveAllAndGetAll_PreservesDataAndPolishCharacters()
     {
-        string nonExistentFile = Path.Combine(Path.GetTempPath(), $"non_existent_{Guid.NewGuid()}.md");
-        var loaded = NoteStorage.LoadNotes(nonExistentFile);
-        Assert.NotNull(loaded);
-        Assert.Empty(loaded);
+        string tempFile = Path.Combine(Path.GetTempPath(), $"notes_test_{Guid.NewGuid()}.json");
+
+        try
+        {
+            var repo = new JsonNoteRepository(tempFile);
+
+            var note1 = new Note
+            {
+                Id = Guid.NewGuid(),
+                Title = "Zażółć gęślą jaźń",
+                Content = "Wieloliniowa treść:\nLinia 1: ąćęłńóśźż\nLinia 2: ĄĆĘŁŃÓŚŹŻ",
+                CreatedAt = new DateTime(2026, 11, 5, 8, 0, 0),
+                UpdatedAt = new DateTime(2026, 11, 5, 9, 30, 0)
+            };
+
+            var note2 = new Note
+            {
+                Id = Guid.NewGuid(),
+                Title = "Druga notatka",
+                Content = "Krótki opis",
+                CreatedAt = new DateTime(2026, 11, 5, 9, 0, 0),
+                UpdatedAt = new DateTime(2026, 11, 5, 9, 15, 0)
+            };
+
+            repo.SaveAll(new[] { note1, note2 });
+
+            // Sprawdź czy plik fizycznie istnieje i zawiera nieescapowane polskie znaki
+            string rawJson = File.ReadAllText(tempFile, Encoding.UTF8);
+            Assert.Contains("Zażółć gęślą jaźń", rawJson);
+            Assert.Contains("ąćęłńóśźż", rawJson);
+            Assert.DoesNotContain("\\u0", rawJson);
+
+            // Odczyt z repozytorium
+            var loaded = repo.GetAllNotes();
+            Assert.Equal(2, loaded.Count);
+
+            var loaded1 = loaded.First(n => n.Id == note1.Id);
+            Assert.Equal("Zażółć gęślą jaźń", loaded1.Title);
+            Assert.Equal(note1.Content, loaded1.Content);
+            Assert.Equal(note1.CreatedAt, loaded1.CreatedAt);
+            Assert.Equal(note1.UpdatedAt, loaded1.UpdatedAt);
+
+            var loaded2 = loaded.First(n => n.Id == note2.Id);
+            Assert.Equal("Druga notatka", loaded2.Title);
+            Assert.Equal("Krótki opis", loaded2.Content);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact]
+    public void Repository_SaveOrUpdate_UpdatesExistingNoteWithoutDuplicate()
+    {
+        string tempFile = Path.Combine(Path.GetTempPath(), $"notes_test_{Guid.NewGuid()}.json");
+
+        try
+        {
+            var repo = new JsonNoteRepository(tempFile);
+
+            var note = new Note
+            {
+                Id = Guid.NewGuid(),
+                Title = "Tytuł początkowy",
+                Content = "Treść początkowa",
+                CreatedAt = new DateTime(2026, 11, 1, 10, 0, 0),
+                UpdatedAt = new DateTime(2026, 11, 1, 10, 0, 0)
+            };
+
+            repo.SaveOrUpdate(note);
+
+            var listAfterAdd = repo.GetAllNotes();
+            Assert.Single(listAfterAdd);
+            Assert.Equal("Tytuł początkowy", listAfterAdd[0].Title);
+
+            // Modyfikacja tej samej notatki
+            note.Title = "Zaktualizowany tytuł";
+            note.Content = "Zaktualizowana treść";
+
+            repo.SaveOrUpdate(note);
+
+            var listAfterUpdate = repo.GetAllNotes();
+            Assert.Single(listAfterUpdate); // Nie może być duplikatu!
+            Assert.Equal("Zaktualizowany tytuł", listAfterUpdate[0].Title);
+            Assert.Equal("Zaktualizowana treść", listAfterUpdate[0].Content);
+            Assert.Equal(note.Id, listAfterUpdate[0].Id);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact]
+    public void Repository_DeleteNote_RemovesNoteSuccessfully()
+    {
+        string tempFile = Path.Combine(Path.GetTempPath(), $"notes_test_{Guid.NewGuid()}.json");
+
+        try
+        {
+            var repo = new JsonNoteRepository(tempFile);
+            var note = new Note { Title = "Do usunięcia", Content = "Treść" };
+            repo.SaveOrUpdate(note);
+
+            Assert.Single(repo.GetAllNotes());
+
+            bool deleted = repo.DeleteNote(note.Id);
+            Assert.True(deleted);
+            Assert.Empty(repo.GetAllNotes());
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact]
+    public void Repository_CorruptedJson_ThrowsNoteStorageException()
+    {
+        string tempFile = Path.Combine(Path.GetTempPath(), $"notes_test_{Guid.NewGuid()}.json");
+
+        try
+        {
+            File.WriteAllText(tempFile, "NIEPOPRAWNY_JSON {{{", Encoding.UTF8);
+            var repo = new JsonNoteRepository(tempFile);
+
+            Assert.Throws<NoteStorageException>(() => repo.GetAllNotes());
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact]
+    public void NoteStorage_InheritsFromJsonNoteRepository()
+    {
+        string tempFile = Path.Combine(Path.GetTempPath(), $"notes_test_{Guid.NewGuid()}.json");
+        try
+        {
+            var storage = new NoteStorage(tempFile);
+            Assert.IsAssignableFrom<INoteRepository>(storage);
+            Assert.IsAssignableFrom<JsonNoteRepository>(storage);
+
+            var note = new Note { Title = "Test NoteStorage", Content = "Działa" };
+            storage.SaveOrUpdate(note);
+
+            var loaded = storage.GetAllNotes();
+            Assert.Single(loaded);
+            Assert.Equal("Test NoteStorage", loaded[0].Title);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
     }
 }
