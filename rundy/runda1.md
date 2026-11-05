@@ -1,4 +1,5 @@
-<!--MainWindow.axaml-->
+MainWindow.axaml
+
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -151,7 +152,10 @@
         </Border>
     </Grid>
 </Window>
-<!--MainWindow.axaml.cs-->
+
+
+MainWindow.axaml.cs
+
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -385,7 +389,9 @@ public partial class MainWindow : Window
         StatusMessageTextBlock.Foreground = isError ? Brushes.Crimson : Brushes.ForestGreen;
     }
 }
-<!--.gitignore-->
+
+.gitignore
+
 [Bb]in/
 [Oo]bj/
 *.user

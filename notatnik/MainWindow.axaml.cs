@@ -34,14 +34,15 @@ public partial class MainWindow : Window
 
         if (loaded.Count > 0)
         {
-            foreach (var note in loaded)
+            // Posortuj od najnowszej (najnowsza na górze)
+            foreach (var note in loaded.OrderByDescending(n => n.UpdatedAt))
             {
                 _notes.Add(note);
             }
 
             // Zaznacz pierwszą notatkę domyślnie
             NotesListBox.SelectedIndex = 0;
-            SetStatus($"Wczytano {_notes.Count} notatek z pliku.");
+            SetStatus($"Wczytano {_notes.Count} notatek z pliku notatki.md.");
         }
         else
         {
@@ -55,7 +56,7 @@ public partial class MainWindow : Window
             _notes.Add(sampleNote);
             NoteStorage.SaveNotes(_filePath, _notes);
             NotesListBox.SelectedIndex = 0;
-            SetStatus("Utworzono plik z notatką powitalną.");
+            SetStatus("Utworzono plik notatki.md z notatką powitalną.");
         }
     }
 
@@ -109,6 +110,16 @@ public partial class MainWindow : Window
             currentNote.Title = title;
             currentNote.Content = content;
             currentNote.UpdatedAt = DateTime.Now;
+
+            // Przesuń zaktualizowaną notatkę na górę listy (najnowsza na górze)
+            int oldIndex = _notes.IndexOf(currentNote);
+            if (oldIndex > 0)
+            {
+                _isUpdatingFields = true;
+                _notes.Move(oldIndex, 0);
+                NotesListBox.SelectedItem = currentNote;
+                _isUpdatingFields = false;
+            }
         }
         else
         {
@@ -128,7 +139,7 @@ public partial class MainWindow : Window
         try
         {
             NoteStorage.SaveNotes(_filePath, _notes);
-            SetStatus($"Zapisano pomyślnie do pliku o {DateTime.Now:HH:mm:ss}!");
+            SetStatus($"Zapisano do pliku notatki.md o {DateTime.Now:HH:mm:ss}!");
         }
         catch (Exception ex)
         {
