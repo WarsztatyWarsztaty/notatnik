@@ -108,6 +108,9 @@ public static class NoteStorage
     {
         // Najnowsza notatka na górze pliku
         var sortedNotes = notes.OrderByDescending(n => n.UpdatedAt).ToList();
+        if (sortedNotes.Count == 0)
+            return string.Empty;
+
         var sb = new StringBuilder();
 
         for (int i = 0; i < sortedNotes.Count; i++)
@@ -128,7 +131,7 @@ public static class NoteStorage
             }
         }
 
-        return sb.ToString();
+        return sb.ToString().TrimEnd('\r', '\n') + Environment.NewLine;
     }
 
     public static List<Note> ParseMarkdown(string markdown)

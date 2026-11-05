@@ -38,6 +38,37 @@ public class NoteTests
     }
 
     [Fact]
+    public void SerializeMarkdown_ExactUserExampleFormat()
+    {
+        var note1 = new Note
+        {
+            Title = "Zakupy",
+            Content = "mleko\nchleb",
+            UpdatedAt = new DateTime(2026, 9, 8, 14, 32, 0)
+        };
+        var note2 = new Note
+        {
+            Title = "Pomysł na projekt",
+            Content = "minutnik z historią sesji",
+            UpdatedAt = new DateTime(2026, 9, 7, 9, 15, 0)
+        };
+
+        // Przekazujemy w odwrotnej kolejności, żeby sprawdzić czy sortuje najnowszą na górę
+        var markdown = NoteStorage.SerializeMarkdown(new[] { note2, note1 });
+
+        string expected =
+@"## 2026-09-08 14:32 — Zakupy
+mleko
+chleb
+
+## 2026-09-07 09:15 — Pomysł na projekt
+minutnik z historią sesji
+";
+
+        Assert.Equal(expected.Replace("\r\n", "\n"), markdown.Replace("\r\n", "\n"));
+    }
+
+    [Fact]
     public void SerializeMarkdown_FormatsAccordingToSpec_WithNewestOnTop()
     {
         var olderNote = new Note

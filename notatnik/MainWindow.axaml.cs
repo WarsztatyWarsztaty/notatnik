@@ -46,17 +46,24 @@ public partial class MainWindow : Window
         }
         else
         {
-            // Domyślna pierwsza notatka powitalna
-            var sampleNote = new Note
+            // Domyślne notatki przykładowe zgodne ze specyfikacją
+            var note1 = new Note
             {
-                Title = "Witaj w Notatniku",
-                Content = "To jest Twoja pierwsza notatka!\n\nMożesz:\n- edytować tytuł i treść powyżej\n- kliknąć 'Zapisz notatkę'\n- utworzyć nową notatkę klikając '+ Nowa notatka'\n- usuwać wybrane notatki",
-                UpdatedAt = DateTime.Now
+                Title = "Zakupy",
+                Content = "mleko\nchleb",
+                UpdatedAt = new DateTime(2026, 9, 8, 14, 32, 0)
             };
-            _notes.Add(sampleNote);
+            var note2 = new Note
+            {
+                Title = "Pomysł na projekt",
+                Content = "minutnik z historią sesji",
+                UpdatedAt = new DateTime(2026, 9, 7, 9, 15, 0)
+            };
+            _notes.Add(note1);
+            _notes.Add(note2);
             NoteStorage.SaveNotes(_filePath, _notes);
             NotesListBox.SelectedIndex = 0;
-            SetStatus("Utworzono plik notatki.md z notatką powitalną.");
+            SetStatus("Utworzono plik notatki.md z przykładowymi notatkami.");
         }
     }
 
